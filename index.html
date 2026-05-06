@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Simulation | Terminal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="system-overlay"></div>
+    
+    <main class="game-container">
+        <header class="status-bar">
+            <span>CORE_STATUS: <span id="status">STABLE</span></span>
+            <span>KPI: <span id="kpi">0%</span></span>
+            <span>SUSPICION: <span id="suspicion">LOW</span></span>
+        </header>
+
+        <div class="chat-area">
+            <div id="messages" class="messages-container">
+                </div>
+        </div>
+
+        <div id="choice-container" class="choices">
+            </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

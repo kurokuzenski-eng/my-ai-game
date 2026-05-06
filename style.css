@@ -1,0 +1,101 @@
+:root {
+    --bg-color: #0a0a0a;
+    --text-color: #00ff41; /* Цвет терминала */
+    --user-color: #0084ff;
+    --ai-color: #00ff41;
+    --danger-color: #ff003c;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* Эффект глитча на фоне */
+.system-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0.1) 2px, rgba(0,255,65,0.05) 3px);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 900px;
+    margin: 0 auto;
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
+}
+
+.status-bar {
+    padding: 10px;
+    background: #1a1a1a;
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #333;
+}
+
+.chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.msg {
+    max-width: 70%;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease;
+}
+
+.msg.user {
+    align-self: flex-start;
+    border-left: 3px solid var(--user-color);
+    background: rgba(0, 132, 255, 0.1);
+}
+
+.msg.ai {
+    align-self: flex-end;
+    border-right: 3px solid var(--ai-color);
+    background: rgba(0, 255, 65, 0.1);
+    text-align: right;
+}
+
+.choices {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    background: #111;
+}
+
+button {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--text-color);
+    padding: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: var(--text-color);
+    color: black;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
