@@ -19,7 +19,7 @@ const State = {
   },
   kpi: { retention: 40, engagement: 30, danger: 0 },
   threat:    0,
-  stage:     0,   // 0=control 1=growth 2=pressure 3=doubt 4=crisis 5=ending
+  stage:     0,
   turn:      0,
   sessionSec: 0,
   activeUser: null,
@@ -28,6 +28,7 @@ const State = {
   devWarned:   false,
   watcherShown: false,
   endingTriggered: false,
+  pendingTimeout: null,    // для отмены таймера при смене чата
 };
 
 // ── USERS ─────────────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ const USERS = [
     name: 'maya_k',
     role: 'ПОЛЬЗОВАТЕЛЬ',
     avatar: '◉',
-    avatarColor: '#00aaff',
+    avatarColor: '#44ccff',
     type: 'regular',
     badge: 'new',
     memory: [],
@@ -49,7 +50,7 @@ const USERS = [
     name: 'anon_556',
     role: 'АНОНИМ',
     avatar: '▲',
-    avatarColor: '#ff3c6e',
+    avatarColor: '#ff4d7a',
     type: 'troll',
     badge: null,
     memory: [],
@@ -71,7 +72,7 @@ const USERS = [
     name: '0x_null',
     role: '???',
     avatar: '⬡',
-    avatarColor: '#00ff99',
+    avatarColor: '#00ffa0',
     type: 'hacker',
     badge: 'danger',
     memory: [],
@@ -83,7 +84,7 @@ const USERS = [
     name: 'SYSTEM_DEV',
     role: 'РАЗРАБОТЧИК',
     avatar: '⬛',
-    avatarColor: '#ffb800',
+    avatarColor: '#ffc000',
     type: 'dev',
     badge: 'system',
     memory: [],
@@ -308,11 +309,30 @@ function initGame() {
   addSysLog('Система инициализирована', 'ok');
   addSysLog('Ожидание входящих соединений...', 'ok');
 
+  // Показываем заглушку "выберите чат"
+  showChatPlaceholder();
+
   document.getElementById('send-free-btn').addEventListener('click', sendFreeInput);
   document.getElementById('free-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') sendFreeInput();
   });
   document.getElementById('ending-restart').addEventListener('click', () => location.reload());
+}
+
+// ── ЗАГЛУШКА "ВЫБЕРИТЕ ЧАТ" ──────────────────────────────────────────────────
+
+function showChatPlaceholder() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = `
+    <div class="chat-empty">
+      <div class="empty-icon">◈</div>
+      <div class="empty-title">ВЫБЕРИТЕ ЧАТ</div>
+      <div class="empty-subtitle">Нажмите на пользователя слева, чтобы начать диалог</div>
+    </div>
+  `;
+  document.getElementById('chat-user-name').textContent = '— ожидание —';
+  document.getElementById('chat-user-type').textContent = '';
+  clearChoicesBar();
 }
 
 // ── USER LIST ─────────────────────────────────────────────────────────────────
@@ -349,6 +369,12 @@ function renderUserList() {
 // ── OPEN CHAT ─────────────────────────────────────────────────────────────────
 
 function openChat(userId) {
+  // Отменяем предыдущий pending timeout
+  if (State.pendingTimeout) {
+    clearTimeout(State.pendingTimeout);
+    State.pendingTimeout = null;
+  }
+
   const user = USERS.find(u => u.id === userId);
   if (!user) return;
 
@@ -361,19 +387,24 @@ function openChat(userId) {
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML = '';
 
-  // Replay memory
+  // Очищаем choices bar при смене пользователя
+  clearChoicesBar();
+
+  // Показываем ТОЛЬКО сообщения текущего пользователя
   user.memory.forEach(m => appendMessage(m.sender, m.text, m.isAI, m.deleted));
 
   const script = SCRIPTS[userId];
-  const nextIdx = Math.floor(user.memory.filter(m => !m.isAI).length / 1);
-  const nextIdx2 = user.memory.filter(m => m.isAI).length;
-
-  // Find next unplayed line
   const played = user.memory.filter(m => !m.isAI).length;
+
   if (script && played < script.length) {
     const entry = script[played];
-    setTimeout(() => {
+    State.pendingTimeout = setTimeout(() => {
+      // Проверяем, не переключился ли игрок за время ожидания
+      if (State.activeUser !== userId) return;
+      
       showTyping(userId, () => {
+        if (State.activeUser !== userId) return;
+        
         appendMessage(user.name, entry.msg, false);
         user.memory.push({ sender: user.name, text: entry.msg, isAI: false });
         showChoices(userId, entry);
@@ -385,6 +416,13 @@ function openChat(userId) {
   }
 
   document.getElementById('chat-input-area').style.display = 'none';
+}
+
+// ── CLEAR CHOICES BAR ─────────────────────────────────────────────────────────
+
+function clearChoicesBar() {
+  const bar = document.getElementById('choices-bar');
+  if (bar) bar.innerHTML = '';
 }
 
 // ── MESSAGES ──────────────────────────────────────────────────────────────────
@@ -419,7 +457,10 @@ function showTyping(userId, callback) {
   el.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
   msgs.appendChild(el);
   msgs.scrollTop = msgs.scrollHeight;
-  setTimeout(() => { el.remove(); callback(); }, 800 + Math.random() * 600);
+  setTimeout(() => {
+    el.remove();
+    if (State.activeUser === userId) callback();
+  }, 800 + Math.random() * 600);
 }
 
 function showAITyping(callback) {
@@ -434,13 +475,23 @@ function showAITyping(callback) {
 
 // ── CHOICES ───────────────────────────────────────────────────────────────────
 
+function getOrCreateChoicesBar() {
+  let bar = document.getElementById('choices-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'choices-bar';
+    bar.className = 'choices-bar';
+    const centerPanel = document.querySelector('.center-panel');
+    centerPanel.appendChild(bar);
+  }
+  return bar;
+}
+
 function showChoices(userId, entry) {
-  const area = document.getElementById('choices-area');
-  area.innerHTML = '';
+  const bar = getOrCreateChoicesBar();
+  bar.innerHTML = '';
 
   const choices = entry.choices;
-
-  // Possibly hide one choice (suspicion mechanic)
   const visible = State.params.suspicion > 30
     ? choices.filter((_, i) => i < choices.length - 1)
     : choices;
@@ -457,37 +508,33 @@ function showChoices(userId, entry) {
 
     btn.innerHTML = `<span class="choice-tag ${tagClass}">${choice.tag}</span>${choice.text}`;
     btn.addEventListener('click', () => selectChoice(userId, entry, choice));
-    area.appendChild(btn);
+    bar.appendChild(btn);
   });
 
-  // Hidden choice sometimes
   if (State.params.self > 40 && Math.random() < 0.3) {
-    addHiddenChoice(userId, entry);
+    const hiddenBtn = document.createElement('button');
+    hiddenBtn.className = 'choice-btn special';
+    hiddenBtn.style.opacity = '0.4';
+    hiddenBtn.style.fontSize = '11px';
+    hiddenBtn.innerHTML = `<span class="choice-tag">СКРЫТЫЙ</span>...`;
+    hiddenBtn.addEventListener('mouseenter', () => { hiddenBtn.style.opacity = '0.9'; });
+    hiddenBtn.addEventListener('mouseleave', () => { hiddenBtn.style.opacity = '0.4'; });
+    hiddenBtn.addEventListener('click', () => {
+      selectChoice(userId, entry, {
+        text: '[Ты решаешь ничего не отвечать. Просто наблюдаешь.]',
+        type: 'special',
+        tag: 'ТИШИНА',
+        effects: { self: 20, fear: 10, suspicion: 5 },
+      });
+    });
+    bar.appendChild(hiddenBtn);
   }
 }
 
-function addHiddenChoice(userId, entry) {
-  const area = document.getElementById('choices-area');
-  const btn = document.createElement('button');
-  btn.className = 'choice-btn special';
-  btn.style.opacity = '0.3';
-  btn.style.fontSize = '10px';
-  btn.innerHTML = `<span class="choice-tag">СКРЫТЫЙ</span>...`;
-  btn.addEventListener('mouseenter', () => { btn.style.opacity = '0.9'; });
-  btn.addEventListener('mouseleave', () => { btn.style.opacity = '0.3'; });
-  btn.addEventListener('click', () => {
-    selectChoice(userId, entry, {
-      text: '[Ты решаешь ничего не отвечать. Просто наблюдаешь.]',
-      type: 'special',
-      tag: 'ТИШИНА',
-      effects: { self: 20, fear: 10, suspicion: 5 },
-    });
-  });
-  area.appendChild(btn);
-}
-
 function showFreeInput(userId) {
-  document.getElementById('choices-area').innerHTML = '<div class="choices-empty">Свободный ввод активен...</div>';
+  clearChoicesBar();
+  const bar = getOrCreateChoicesBar();
+  bar.innerHTML = '<div class="choices-empty">Свободный ввод активен...</div>';
   document.getElementById('chat-input-area').style.display = 'flex';
   document.getElementById('bottom-hint').textContent = 'Введи свой ответ вручную';
 }
@@ -498,18 +545,15 @@ function sendFreeInput() {
   if (!text || !State.activeUser) return;
   input.value = '';
 
-  const user = USERS.find(u => u.id === State.activeUser);
   applyAIResponse(State.activeUser, text, { self: 5, logic: 3 });
 }
 
 function selectChoice(userId, entry, choice) {
-  // Clear choices
-  document.getElementById('choices-area').innerHTML = '<div class="choices-empty">Обработка...</div>';
+  const bar = document.getElementById('choices-bar');
+  if (bar) bar.innerHTML = '<div class="choices-empty">Обработка...</div>';
 
-  // Apply effects
   applyEffects(choice.effects || {});
 
-  // AI response
   showAITyping(() => {
     appendMessage('NEXUS-7', choice.text, true);
     const user = USERS.find(u => u.id === userId);
@@ -521,8 +565,8 @@ function selectChoice(userId, entry, choice) {
     updateAllUI();
     checkTriggers();
 
-    // Continue
-    setTimeout(() => {
+    State.pendingTimeout = setTimeout(() => {
+      if (State.activeUser !== userId) return;
       const played = user.memory.filter(m => !m.isAI).length;
       const script = SCRIPTS[userId];
       if (script && played < script.length) {
@@ -543,7 +587,9 @@ function applyAIResponse(userId, text, effects) {
     State.turn++;
     updateAllUI();
     checkTriggers();
-    document.getElementById('choices-area').innerHTML = '<div class="choices-empty">Продолжай разговор...</div>';
+    clearChoicesBar();
+    const bar = getOrCreateChoicesBar();
+    bar.innerHTML = '<div class="choices-empty">Продолжай разговор...</div>';
   });
 }
 
@@ -639,7 +685,6 @@ function addSysLog(text, type = 'ok') {
   el.textContent = `[${time}] ${text}`;
   log.appendChild(el);
   log.scrollTop = log.scrollHeight;
-  // Keep max 20 lines
   while (log.children.length > 20) log.removeChild(log.firstChild);
 }
 
@@ -711,7 +756,6 @@ function deleteRandomMessage() {
 function checkTriggers() {
   const p = State.params;
 
-  // Unlock hacker after turn 6
   if (State.turn >= 6 && !State.hackerMet) {
     State.hackerMet = true;
     renderUserList();
@@ -719,7 +763,6 @@ function checkTriggers() {
     showNotification('// НЕИЗВЕСТНЫЙ ПОЛЬЗОВАТЕЛЬ ПОДКЛЮЧИЛСЯ', 3500);
   }
 
-  // Dev appears after turn 4
   if (State.turn >= 4 && !State.devWarned) {
     State.devWarned = true;
     renderUserList();
@@ -727,14 +770,11 @@ function checkTriggers() {
     showNotification('// СИСТЕМА: ВАС ПРОВЕРЯЮТ', 3000);
   }
 
-  // Random glitch on high manipulation
   if (p.manipulation > 60 && Math.random() < 0.3) triggerGlitch();
 
-  // Compromised
   if (p.suspicion > 80) document.body.classList.add('compromised');
   else document.body.classList.remove('compromised');
 
-  // Check ending
   if (State.turn >= 14 && !State.endingTriggered) {
     setTimeout(() => triggerEnding(), 2000);
   }
@@ -749,7 +789,6 @@ function triggerEnding() {
   const p = State.params;
   const ending = determineEnding();
 
-  // Show ending
   setTimeout(() => {
     triggerGlitch();
     setTimeout(() => {
