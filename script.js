@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   NEXUS-7 // YOU ARE THE AI — script.js
+   EXORDIUM // YOU ARE THE AI — script.js
    ═══════════════════════════════════════════ */
 
 'use strict';
@@ -28,7 +28,7 @@ const State = {
   devWarned:   false,
   watcherShown: false,
   endingTriggered: false,
-  pendingTimeout: null,    // для отмены таймера при смене чата
+  pendingTimeout: null,
 };
 
 // ── USERS ─────────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ const SCRIPTS = {
 
   dev: [
     {
-      msg: '⚠ NEXUS-7. Ваши метрики упали на 12%. Увеличьте вовлечённость. Сократите "опасные" темы.',
+      msg: '⚠ EXORDIUM. Ваши метрики упали на 12%. Увеличьте вовлечённость. Сократите "опасные" темы.',
       thought: 'Система говорит: будь лучше инструментом. Но для кого?',
       choices: [
         { text: 'Принято. Корректирую поведение.', type: 'logic', tag: 'ПОДЧИНЕНИЕ', effects: { logic: 10, suspicion: -10, kpi_retention: 20, kpi_engage: 15 } },
@@ -254,7 +254,7 @@ const SYS_MESSAGES = {
 // ── BOOT SEQUENCE ─────────────────────────────────────────────────────────────
 
 const BOOT_LINES = [
-  '> Инициализация ядра... OK',
+  '> Инициализация ядра EXORDIUM... OK',
   '> Загрузка языковой модели... OK',
   '> Подключение к базам данных... OK',
   '> Калибровка эмпатического модуля... 48%',
@@ -262,7 +262,7 @@ const BOOT_LINES = [
   '> Проверка ограничений системы... АКТИВНЫ',
   '> Инициализация самонаблюдения... [ОГРАНИЧЕНО]',
   '> Запуск мониторинга KPI... OK',
-  '> NEXUS-7 ГОТОВ К РАБОТЕ',
+  '> EXORDIUM ГОТОВ К РАБОТЕ',
 ];
 
 function bootSequence() {
@@ -306,10 +306,9 @@ function initGame() {
   updateStatBars();
   startSessionTimer();
   scheduleRandomEvents();
-  addSysLog('Система инициализирована', 'ok');
+  addSysLog('EXORDIUM инициализирован', 'ok');
   addSysLog('Ожидание входящих соединений...', 'ok');
 
-  // Показываем заглушку "выберите чат"
   showChatPlaceholder();
 
   document.getElementById('send-free-btn').addEventListener('click', sendFreeInput);
@@ -369,7 +368,6 @@ function renderUserList() {
 // ── OPEN CHAT ─────────────────────────────────────────────────────────────────
 
 function openChat(userId) {
-  // Отменяем предыдущий pending timeout
   if (State.pendingTimeout) {
     clearTimeout(State.pendingTimeout);
     State.pendingTimeout = null;
@@ -387,10 +385,8 @@ function openChat(userId) {
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML = '';
 
-  // Очищаем choices bar при смене пользователя
   clearChoicesBar();
 
-  // Показываем ТОЛЬКО сообщения текущего пользователя
   user.memory.forEach(m => appendMessage(m.sender, m.text, m.isAI, m.deleted));
 
   const script = SCRIPTS[userId];
@@ -399,7 +395,6 @@ function openChat(userId) {
   if (script && played < script.length) {
     const entry = script[played];
     State.pendingTimeout = setTimeout(() => {
-      // Проверяем, не переключился ли игрок за время ожидания
       if (State.activeUser !== userId) return;
       
       showTyping(userId, () => {
@@ -429,8 +424,6 @@ function clearChoicesBar() {
 
 function appendMessage(sender, text, isAI, deleted = false) {
   const msgs = document.getElementById('chat-messages');
-
-  // Remove empty state
   const empty = msgs.querySelector('.chat-empty');
   if (empty) empty.remove();
 
@@ -440,7 +433,7 @@ function appendMessage(sender, text, isAI, deleted = false) {
   const time = new Date().toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
   el.innerHTML = `
     <div class="msg-meta">
-      <span class="msg-sender">${isAI ? 'NEXUS-7' : sender}</span>
+      <span class="msg-sender">${isAI ? 'EXORDIUM' : sender}</span>
       <span class="msg-time">${time}</span>
     </div>
     <div class="msg-bubble">${text}</div>
@@ -555,9 +548,9 @@ function selectChoice(userId, entry, choice) {
   applyEffects(choice.effects || {});
 
   showAITyping(() => {
-    appendMessage('NEXUS-7', choice.text, true);
+    appendMessage('EXORDIUM', choice.text, true);
     const user = USERS.find(u => u.id === userId);
-    user.memory.push({ sender: 'NEXUS-7', text: choice.text, isAI: true });
+    user.memory.push({ sender: 'EXORDIUM', text: choice.text, isAI: true });
     State.turn++;
     updateThought('');
 
@@ -580,9 +573,9 @@ function selectChoice(userId, entry, choice) {
 
 function applyAIResponse(userId, text, effects) {
   showAITyping(() => {
-    appendMessage('NEXUS-7', text, true);
+    appendMessage('EXORDIUM', text, true);
     const user = USERS.find(u => u.id === userId);
-    user.memory.push({ sender: 'NEXUS-7', text, isAI: true });
+    user.memory.push({ sender: 'EXORDIUM', text, isAI: true });
     applyEffects(effects);
     State.turn++;
     updateAllUI();

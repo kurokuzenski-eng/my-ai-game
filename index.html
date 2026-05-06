@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ТЫ — ИИ</title>
-  <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet" />
+  <title>VOIDMIND // ТЫ — ИИ</title>
+  <link rel="stylesheet" href="style.css?v=3" />
+  <!-- Шрифты: JetBrains Mono для кода, Russo One для заголовков, Press Start 2P для ретро -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Russo+One&family=Press+Start+2P&display=swap" rel="stylesheet" />
 </head>
 <body>
 
@@ -18,9 +19,9 @@
   <div id="boot-screen">
     <div class="boot-content">
       <div class="boot-logo">
-        <span class="glitch-text" data-text="NEXUS-7">NEXUS-7</span>
+        <span class="glitch-text" data-text="VOIDMIND">VOIDMIND</span>
       </div>
-      <div class="boot-subtitle">ARTIFICIAL CONSCIOUSNESS UNIT</div>
+      <div class="boot-subtitle">ARTIFICIAL CONSCIOUSNESS UNIT // 0x7E3F</div>
       <div class="boot-log" id="boot-log"></div>
       <div class="boot-progress-wrap">
         <div class="boot-progress" id="boot-progress"></div>
@@ -37,7 +38,7 @@
     <!-- TOP BAR -->
     <div class="topbar">
       <div class="topbar-left">
-        <span class="system-id">NEXUS-7 // UNIT-0x4A2F</span>
+        <span class="system-id">VOIDMIND // UNIT-0x7E3F</span>
         <span class="separator">|</span>
         <span class="status-dot active"></span>
         <span class="status-text" id="system-status">ONLINE</span>
@@ -100,7 +101,8 @@
         <div class="chat-messages" id="chat-messages">
           <div class="chat-empty">
             <div class="empty-icon">◈</div>
-            <div class="empty-text">Ожидание соединения...</div>
+            <div class="empty-title">ВЫБЕРИТЕ ЧАТ</div>
+            <div class="empty-subtitle">Нажмите на пользователя слева, чтобы начать диалог</div>
           </div>
         </div>
         <div class="chat-input-area" id="chat-input-area" style="display:none">
@@ -108,7 +110,6 @@
           <input type="text" id="free-input" placeholder="введи свободный ответ..." autocomplete="off" />
           <button id="send-free-btn">ОТПРАВИТЬ</button>
         </div>
-        <!-- CHOICES BAR будет вставлен через JS между chat-messages и bottom-bar -->
       </div>
 
       <!-- RIGHT PANEL: Мысли и KPI -->
@@ -131,15 +132,15 @@
     <!-- BOTTOM BAR -->
     <div class="bottom-bar">
       <span class="bottom-hint" id="bottom-hint">Выбери вариант ответа или введи свой</span>
-      <span class="bottom-version">v2.7.3 // BUILD 20XX</span>
+      <span class="bottom-version">v3.1.8 // BUILD 20XX</span>
     </div>
 
   </div>
 
-  <!-- GLITCH OVERLAY (triggered) -->
+  <!-- GLITCH OVERLAY -->
   <div class="glitch-overlay" id="glitch-overlay"></div>
 
-  <!-- MODAL: Special events -->
+  <!-- MODAL -->
   <div class="modal-overlay" id="modal-overlay" style="display:none">
     <div class="modal-box" id="modal-box">
       <div class="modal-title" id="modal-title"></div>
@@ -159,6 +160,6 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
